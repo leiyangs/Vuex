@@ -1,5 +1,7 @@
 # vuex-imp
 
+Vuex原理
+
 ## Project setup
 ```
 yarn install
