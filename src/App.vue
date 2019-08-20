@@ -1,6 +1,7 @@
 <template>
   <div id="app">
     {{$store.state.count}}
+    {{$store.getters.newCount}}
   </div>
 </template>
 

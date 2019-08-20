@@ -11,6 +11,11 @@ export default new Vuex.Store({
   mutations: {
 
   },
+  getters: {
+    newCount (state) {
+      return state.count + 100
+    }
+  },
   actions: {
 
   }
