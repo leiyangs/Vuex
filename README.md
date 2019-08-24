@@ -1,6 +1,6 @@
 # vuex-imp
 
-Vuex原理
+Vuex原理及注释
 
 ## Project setup
 ```

@@ -8,15 +8,21 @@ export default new Vuex.Store({
   state: {
     count: 100
   },
-  mutations: {
-
-  },
-  getters: {
+  getters: { // computed
     newCount (state) {
       return state.count + 100
     }
   },
-  actions: {
-
+  mutations: { // methods 同步跟新状态
+    change (state) {
+      state.count += 10
+    }
+  },
+  actions: { // 异步跟新状态
+    change ({ commit }) {
+      setTimeout(() => {
+        commit('change')
+      }, 1000)
+    }
   }
 })
