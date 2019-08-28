@@ -1,4 +1,30 @@
+/* eslint-disable new-cap */
 let Vue
+class moduleCollection {
+  constructor (options) {
+    this.register([], options)
+  }
+  register (path, rawModule) { // [], {state,getters...}
+    let newModule = {
+      _raw: rawModule, // 当前对象
+      _children: {},
+      state: rawModule.state
+    }
+    if (path.length === 0) {
+      this.root = newModule
+    } else {
+      let parent = path.slice(0, -1).reduce((root, current) => { // [a] [a,b]
+        return root._children[current]
+      }, this.root)
+      parent._children[path[path.length - 1]] = newModule
+    }
+    if (rawModule.modules) {
+      _forEach(rawModule.modules, (childName, module) => {
+        this.register(path.concat(childName), module) // 如果有modules,循环递归放入children 第一次[a] 第二次[a,b]
+      })
+    }
+  }
+}
 class Store {
   constructor (options) {
     let state = options.state
@@ -11,7 +37,8 @@ class Store {
         state
       }
     })
-
+    this.modules = new moduleCollection(options) // 收集模块
+    console.log(this.modules)
     // getters
     if (options.getters) {
       let getters = options.getters // {newCount: fn}

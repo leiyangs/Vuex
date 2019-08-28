@@ -2,6 +2,7 @@
   <div id="app">
     {{$store.state.count}}
     {{$store.getters.newCount}}
+    {{$store.state.a.b.count}}
     <button @click="change">点击</button>
   </div>
 </template>
