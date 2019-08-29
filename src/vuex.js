@@ -25,6 +25,44 @@ class moduleCollection {
     }
   }
 }
+
+function installModule (store, rootState, path, rootModule) {
+  if (path.length > 0) {
+    let parent = path.slice(0, -1).reduce((root, current) => {
+      return root[current]
+    }, rootState)
+    Vue.set(parent, path[path.length - 1], rootModule.state)
+  }
+  if (rootModule._raw.getters) {
+    _forEach(rootModule._raw.getters, (getterName, getterFn) => {
+      Object.defineProperty(store.getters, getterName, {
+        get: () => {
+          return getterFn(rootModule.state)
+        }
+      })
+    })
+  }
+  if (rootModule._raw.actions) {
+    _forEach(rootModule._raw.actions, (actionName, actionFn) => {
+      let entry = store.actions[actionName] || (store.actions[actionName] = [])
+      entry.push(() => {
+        actionFn.call(store, store)
+      })
+    })
+  }
+  if (rootModule._raw.mutations) {
+    _forEach(rootModule._raw.mutations, (mutationName, mutationFn) => {
+      let entry = store.mutations[mutationName] || (store.mutations[mutationName] = [])
+      entry.push(() => {
+        mutationFn.call(store, rootModule.state)
+      })
+    })
+  }
+  _forEach(rootModule._children, (childName, module) => {
+    installModule(store, rootState, path.concat(childName), module)
+  })
+}
+
 class Store {
   constructor (options) {
     let state = options.state
@@ -39,31 +77,33 @@ class Store {
     })
     this.modules = new moduleCollection(options) // 收集模块
     console.log(this.modules)
+    installModule(this, state, [], this.modules.root)
+
     // getters
-    if (options.getters) {
-      let getters = options.getters // {newCount: fn}
-      _forEach(getters, (getterName, getterFn) => {
-        Object.defineProperty(this.getters, getterName, {
-          get: () => {
-            return getterFn(state)
-          }
-        })
-      })
-    }
+    // if (options.getters) {
+    //   let getters = options.getters // {newCount: fn}
+    //   _forEach(getters, (getterName, getterFn) => {
+    //     Object.defineProperty(this.getters, getterName, {
+    //       get: () => {
+    //         return getterFn(state)
+    //       }
+    //     })
+    //   })
+    // }
     // mutations
-    let mutations = options.mutations
-    _forEach(mutations, (mutationName, mutationFn) => {
-      this.mutations[mutationName] = () => {
-        mutationFn.call(this, state)
-      }
-    })
-    // action
-    let actions = options.actions
-    _forEach(actions, (actionName, actionFn) => {
-      this.actions[actionName] = () => {
-        actionFn.call(this, this) // 这里的this是store，dispatch会调用store中的commit
-      }
-    })
+    // let mutations = options.mutations
+    // _forEach(mutations, (mutationName, mutationFn) => {
+    //   this.mutations[mutationName] = () => {
+    //     mutationFn.call(this, state)
+    //   }
+    // })
+    // // action
+    // let actions = options.actions
+    // _forEach(actions, (actionName, actionFn) => {
+    //   this.actions[actionName] = () => {
+    //     actionFn.call(this, this) // 这里的this是store，dispatch会调用store中的commit
+    //   }
+    // })
     let { commit, dispatch } = this // 保存实例上的commit dispatch
     this.commit = (type) => {
       commit.call(this, type)
@@ -78,10 +118,10 @@ class Store {
   // 防止解构时候this == undefined(let store = new Store(); let {commit, disoatch} = store;) 在上面定义两个方法并call设置this
   commit (type) {
     console.log(1)
-    this.mutations[type]()
+    this.mutations[type].forEach(fn => fn())
   }
   dispatch (type) {
-    this.actions[type]()
+    this.actions[type].forEach(fn => fn())
   }
 }
 
